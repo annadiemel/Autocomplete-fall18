@@ -31,13 +31,19 @@ public class BinarySearchLibrary {
 	public static <T>
     	int firstIndex(List<T> list, 
 	               	T target, Comparator<T> comp) {
-		
+		// making sure that the list has elements
+		if (list.size()==0) return -1;
+		// creating initial range
 		int low = -1;
-		int high = list.size()-1;
-		// (low,high] contains target
-		// TODO: complete method
-		
-		return -1;
+		int high = list.size()-1; // (low,high] contains target
+		while (low+1!=high) {
+			int mid = (low+1+high)/2;
+			T midval = list.get(mid); // taken from example in writeup
+			if (comp.compare(midval, target)<0) low = mid;
+			else high = mid; // changing window of search
+		}
+		if (comp.compare(list.get(high), target)==0) return high; // the only value left in the interval, and equal to target
+		return -1; // target not found
 	}
 
 	/**
@@ -57,11 +63,16 @@ public class BinarySearchLibrary {
                	  T target, Comparator<T> comp) {
 		
 		int low = 0;
-		int high = list.size();
-		
-		// target in [low,high)
-		// TODO: complete method
-		return -1;
+		int high = list.size(); // target in [low,high)
+		if (high ==0) return -1;
+		while (low+1 != high) { // same while loop intuition
+			int mid = (low+high)/2; //one smaller than firstIndex due to inclusion on the left, where zero is not "seen" and exclusion on right
+			T midval = list.get(mid);
+			if (comp.compare(midval, target)>0) high = mid;
+			else low = mid; // don't need to make mid-1, since remaking mid factors this in
+		}
+		if (comp.compare(list.get(low), target)==0) return low;
+		return -1; // target not found
 	}
 	
 }

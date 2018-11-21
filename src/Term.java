@@ -28,7 +28,8 @@ public class Term implements Comparable<Term> {
 	 */
 	public Term(String word, double weight) {
 		// TODO: Complete Term constructor
-		
+		if (word == null) throw new NullPointerException("word is null");
+		if (weight<0) throw new IllegalArgumentException("negative weight "+weight);
 		myWord = word;
 		myWeight = weight;
 	}
@@ -86,12 +87,23 @@ public class Term implements Comparable<Term> {
 		 */
 		public int compare(Term v, Term w) {
 			// TODO: Implement compare
-			
+			String vv = v.getWord();
+			String ww = w.getWord();
+			if (v.getWord().length() > myPrefixSize) {
+				vv = v.getWord().substring(0, myPrefixSize);
+			}
+			if (w.getWord().length() > myPrefixSize) {
+				ww = w.getWord().substring(0, myPrefixSize);
+			}
+			for (int i = 0; i<myPrefixSize; i++) {
+				if (vv.length()<=i) return -1;
+				if (ww.length()<=i) return 1;
+				if (vv.charAt(i)>ww.charAt(i)) return 1;
+				if (ww.charAt(i)>vv.charAt(i)) return -1;
+			}
 			return 0;
-		}
-	
 	}
-
+	}
 	/**
 	 * A Comparator for comparing Terms using only their weights, in descending
 	 * order. This Comparator may be useful in writing your implementations of
@@ -99,10 +111,11 @@ public class Term implements Comparable<Term> {
 	 *
 	 */
 	public static class ReverseWeightOrder implements Comparator<Term> {
+		
 		public int compare(Term v, Term w) {
-			// TODO: implement compare
-			
-			return 0;
+			if (v.getWeight()==w.getWeight()) return 0;
+			else if (v.getWeight() > w.getWeight() ) return -1;
+			else return 1;
 		}
 	}
 
@@ -113,10 +126,11 @@ public class Term implements Comparable<Term> {
 	 *
 	 */
 	public static class WeightOrder implements Comparator<Term> {
+		
 		public int compare(Term v, Term w) {
-			// TODO: implement compare
-			
-			return 0;
+			if (v.getWeight()==w.getWeight()) return 0;
+			else if (v.getWeight()>w.getWeight()) return 1;
+			else return -1;
 		}
 	}
 }

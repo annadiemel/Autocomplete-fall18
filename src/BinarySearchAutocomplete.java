@@ -105,8 +105,28 @@ public class BinarySearchAutocomplete implements Autocompletor {
 	 */
 	@Override
 	public List<Term> topMatches(String prefix, int k) {
-
+		// dealing with invalid cases first
+		if (k < 0) {
+			throw new IllegalArgumentException("Illegal value of k:"+k);
+		}
+		if (prefix == null) throw new NullPointerException("Prefix is null.");
+		
 		ArrayList<Term> list = new ArrayList<>();
+		Comparator<Term> cmp = new Term.PrefixOrder(prefix.length());
+		Term searching = new Term(prefix, 0);
+		// getting first and last indices
+		int one = firstIndexOf(myTerms, searching, cmp);
+		int fina = lastIndexOf(myTerms, searching, cmp);
+		// checking validity
+		if (one<0) return list;
+		Term[] matched = Arrays.copyOfRange(myTerms, one, fina+1);
+		Arrays.sort(matched, new Term.ReverseWeightOrder()); // sorting the list matched by R.W.O.
+		// adding the terms T up to the integer k, giving the specified amount of matched terms
+		for (Term T: matched) {
+			if (list.size()<k) {
+				list.add(T);
+			}
+		}
 		return list;
 	}
 }

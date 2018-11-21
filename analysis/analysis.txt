@@ -1,11 +1,46 @@
 Put your name and netid here
+Anna Diemel, ad356
 
 (1) Run the program BenchmarkForAutocomplete and copy/paste the 
 results here this for #matches = 20
 
+search	size	#match	binary	brute
+	456976	20	0.2400	0.0109
+a	17576	20	0.0041	0.0123
+b	17576	20	0.0044	0.0048
+c	17576	20	0.0043	0.0046
+x	17576	20	0.0041	0.0050
+y	17576	20	0.0040	0.0047
+z	17576	20	0.0042	0.0047
+aa	676	20	0.0001	0.0043
+az	676	20	0.0001	0.0043
+za	676	20	0.0001	0.0042
+zz	676	20	0.0001	0.0047
+
 (2) Run the program again for #matches = 10000, paste the results, 
 and then make any conclusions about how the # matches 
 effects the runtime. 
+
+search	size	#match	binary	brute
+	456976	10000	0.2517	0.0227
+a	17576	10000	0.0041	0.0092
+b	17576	10000	0.0041	0.0092
+c	17576	10000	0.0041	0.0088
+x	17576	10000	0.0043	0.0091
+y	17576	10000	0.0043	0.0141
+z	17576	10000	0.0043	0.0087
+aa	676	10000	0.0001	0.0049
+az	676	10000	0.0001	0.0051
+za	676	10000	0.0002	0.0052
+zz	676	10000	0.0001	0.0050
+
+It is evident that the jump in number of matches from 20 to 10000 does not affect the runtime speed of the binary search. 
+One can see this from the similarities in values along the two binary columns. The brute speeds, in contrast, are greatly
+increased by the increase in #matches; the empty search, for example, increases by 108%. 'y', inexplicably, increases
+by 200% while 'z' increases by only 63%. However, the speed for the double character terms e.g. 'aa', 'az' increase only 
+slightly with the increase in number of matches. This can be explained due to the corresponding smaller search size
+values of these searches- 17576 'y''s vs. 676 'aa' values. So, the number of matches can be said to affect the brute search 
+and not the binary, with a greater increase in runtime for larger search sizes.
 
 (3) Copy/paste the code from BruteAutocomplete.topMatches below. 
 Explain what the Big-Oh complexity of the entire loop: 
@@ -15,16 +50,86 @@ M, the number of terms that match the prefix.
 Assume that every priority-queue operation runs in O(log k) time. 
 Explain your answer which should be in terms of N, M, and k.
 
+public List<Term> topMatches(String prefix, int k) {
+		if (k < 0) {
+			throw new IllegalArgumentException("Illegal value of k:"+k);
+		}
+		
+		// maintain pq of size k
+		PriorityQueue<Term> pq = new PriorityQueue<Term>(10, new Term.WeightOrder());
+		for (Term t : myTerms) {
+			if (!t.getWord().startsWith(prefix))
+				continue;
+			if (pq.size() < k) {
+				pq.add(t);
+			} else if (pq.peek().getWeight() < t.getWeight()) {
+				pq.remove();
+				pq.add(t);
+			}
+		}
+		int numResults = Math.min(k, pq.size());
+		LinkedList<Term> ret = new LinkedList<>();
+		for (int i = 0; i < numResults; i++) {
+			ret.addFirst(pq.remove());
+		}
+		return ret;
+	}
+
+The for loop in question has three if statements, so each of their respective runtimes will add linearly to
+the overall runtime of the loop. Going through each Term t of myTerms will mean the runtime of the loop will
+happen N times, or be multiplied by a factor of N. The first if statement passes by all terms that don't start with the 
+prefix, meaning the following statement(s) will occur M times (the amount of terms with that prefix). Checking the size of pq
+and adding the Term t are both assumed to be O(log(k)), as they are pq operations. Either these will occur, or the final if
+statement will be considered: here, the pq.peek() binary check and its subsequent pq operations are all also O(log(k)).
+Even though only one of these two options will operate, the total regardless will be O(log(k)) since we are linearly adding these operations.
+Since this will execute M times for each term with a prefix, this is an O(Mlog(k)) operation. Since this is nested in the for loop
+with O(N) runtime, the total runtime of the loop is O(N*Mlog(k)).
+
 (4) Explain why the last for loop in BruteAutocomplete.topMatches 
 uses a LinkedList (and not an ArrayList) 
 AND why the PriorityQueue uses Term.WeightOrder to get 
 the top k heaviest matches -- rather than 
 using Term.ReverseWeightOrder.
 
+Using a LinkedList is beneficial in this case, considering that adding to the top of a LinkedList as done with ret.addFirst() is O(1).
+Using Term.WeightOrder puts the desired Terms- that is, those with the largest weight- at the end of pq. This is desirable as the
+elements of pq are accessed using pq.remove(), which will remove the Terms from the queue from the end. Using WeightOrder, the heaviest
+matches will be at the end of pq.  
 
 (5) Explain what the runtime of the 
 BinarySearchAutocomplete.topMatches code that you 
 implemented is by copy/pasting the code below 
 and explaining your answer in terms of N, M, and k.
 
+public List<Term> topMatches(String prefix, int k) {
+		// dealing with invalid cases first
+		if (k < 0) {
+			throw new IllegalArgumentException("Illegal value of k:"+k);
+		}
+		if (prefix == null) throw new NullPointerException("Prefix is null.");
+		
+		ArrayList<Term> list = new ArrayList<>();
+		Comparator<Term> cmp = new Term.PrefixOrder(prefix.length());
+		Term searching = new Term(prefix, 0);
+		// getting first and last indices
+		int one = firstIndexOf(myTerms, searching, cmp);
+		int fina = lastIndexOf(myTerms, searching, cmp);
+		// checking validity
+		if (one<0) return list;
+		Term[] matched = Arrays.copyOfRange(myTerms, one, fina+1);
+		Arrays.sort(matched, new Term.ReverseWeightOrder()); // sorting the list matched by R.W.O.
+		// adding the terms T up to the integer k, giving the specified amount of matched terms
+		for (Term T: matched) {
+			if (list.size()<k) {
+				list.add(T);
+			}
+		}
+		return list;
+	}
 
+All code preceding firstIndexOf is O(1), and this and lastIndexOf are calls of O(1 + logN) as described in the writeup, which is
+simply O(logN) in Big-Oh notation. The line checking the validity of the first index is O(1), as is creating matched. 
+Sorting these, a list of terms of length M, as is done by Arrays,sort, is an O(MlogM) execution. The for loop that follows is
+loops through the M terms in matched, so it is O(M). Then, returning the list of size k is O(k). Note that the executions within the 
+for loop were deemed to be O(1). So, adding all of these linearly, the runtime is O(logN + MlogM + M + k).
+	
